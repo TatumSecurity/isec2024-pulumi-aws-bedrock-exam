@@ -1,0 +1,11 @@
+config:
+  aws:region: us-east-1
+  pulumi-cloud-ai-exam:pulumiAWSS3:
+    - Name: tatumsecurity-bedrock-input-s3
+      Notification: "true"
+      PublicAccess: "false"
+    - Name: tatumsecurity-bedrock-output-s3
+      PublicAccess: "true"
+  pulumi-cloud-ai-exam:pulumiAWSSfn:
+    InputBucket: tatumsecurity-bedrock-input-s3
+    OutputBucket: tatumsecurity-bedrock-output-s3

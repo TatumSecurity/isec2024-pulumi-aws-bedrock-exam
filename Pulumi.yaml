@@ -1,0 +1,4 @@
+name: pulumi-cloud-ai-exam
+runtime: go
+description: A minimal AWS Go Pulumi program
+main: cmd/pulumi
