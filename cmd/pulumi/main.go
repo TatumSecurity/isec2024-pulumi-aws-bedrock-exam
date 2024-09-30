@@ -1,9 +1,7 @@
 package main
 
 import (
-	lambda_manager "pulumi-cloud-ai-exam/resources/lambda"
 	s3_manager "pulumi-cloud-ai-exam/resources/s3"
-	sfn_manager "pulumi-cloud-ai-exam/resources/sfn"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -15,17 +13,17 @@ func main() {
 			ctx.Log.Error("Failed to create S3 manager: "+err.Error(), nil)
 			return err
 		}
-		buildOutputLambdaFunction, filterLabelsLambdaFunction, err := lambda_manager.CreateLambdaManager(ctx)
-		if err != nil {
-			ctx.Log.Error("Failed to create lambda manager: "+err.Error(), nil)
-			return err
-		}
+		// buildOutputLambdaFunction, filterLabelsLambdaFunction, err := lambda_manager.CreateLambdaManager(ctx)
+		// if err != nil {
+		// 	ctx.Log.Error("Failed to create lambda manager: "+err.Error(), nil)
+		// 	return err
+		// }
 
-		err = sfn_manager.CreateSfnManager(ctx, buildOutputLambdaFunction, filterLabelsLambdaFunction)
-		if err != nil {
-			ctx.Log.Error("Failed to create sfn manager: "+err.Error(), nil)
-			return err
-		}
+		// err = sfn_manager.CreateSfnManager(ctx, buildOutputLambdaFunction, filterLabelsLambdaFunction)
+		// if err != nil {
+		// 	ctx.Log.Error("Failed to create sfn manager: "+err.Error(), nil)
+		// 	return err
+		// }
 		return nil
 	})
 }
