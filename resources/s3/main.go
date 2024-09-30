@@ -38,12 +38,12 @@ func CreateS3Manager(ctx *pulumi.Context) error {
 		}
 
 		if s3Info.PublicAccess == "true" {
-			_, err = s3.NewBucketPublicAccessBlock(ctx, s3Info.Name+"PublicAccessBlock", &s3.BucketPublicAccessBlockArgs{
+			publicAccessBlock, err := s3.NewBucketPublicAccessBlock(ctx, s3Info.Name+"PublicAccessBlock", &s3.BucketPublicAccessBlockArgs{
 				Bucket:                bucketInfo.ID(),
-				BlockPublicAcls:       pulumi.Bool(true),
-				BlockPublicPolicy:     pulumi.Bool(true),
-				IgnorePublicAcls:      pulumi.Bool(true),
-				RestrictPublicBuckets: pulumi.Bool(true),
+				BlockPublicAcls:       pulumi.Bool(false),
+				BlockPublicPolicy:     pulumi.Bool(false),
+				IgnorePublicAcls:      pulumi.Bool(false),
+				RestrictPublicBuckets: pulumi.Bool(false),
 			}, pulumi.DependsOn([]pulumi.Resource{
 				bucketInfo,
 			}))
@@ -51,7 +51,29 @@ func CreateS3Manager(ctx *pulumi.Context) error {
 				ctx.Log.Error("S3 policy creation failed ", nil)
 				return err
 			}
-			piblicS3Policy := map[string]interface{}{
+			bucketOwnershipControls, err := s3.NewBucketOwnershipControls(ctx, s3Info.Name+"BucketOwnershipControls", &s3.BucketOwnershipControlsArgs{
+				Bucket: bucketInfo.ID(),
+				Rule: &s3.BucketOwnershipControlsRuleArgs{
+					ObjectOwnership: pulumi.String("BucketOwnerPreferred"),
+				},
+			})
+			if err != nil {
+				ctx.Log.Error("S3 bucket ownership controls creation failed ", nil)
+				return err
+			}
+			bucketAcls, err := s3.NewBucketAclV2(ctx, s3Info.Name+"Acls", &s3.BucketAclV2Args{
+				Bucket: bucketInfo.ID(),
+				Acl:    pulumi.String(s3.CannedAclPublicRead),
+			}, pulumi.DependsOn([]pulumi.Resource{
+				bucketInfo,
+				bucketOwnershipControls,
+				publicAccessBlock,
+			}))
+			if err != nil {
+				ctx.Log.Error("S3 bucket ownership controls creation failed ", nil)
+				return err
+			}
+			publicS3Policy := map[string]interface{}{
 				"Version": "2012-10-17",
 				"Statement": map[string]interface{}{
 					"Effect":    "Allow",
@@ -60,17 +82,12 @@ func CreateS3Manager(ctx *pulumi.Context) error {
 					"Resource":  pulumi.Sprintf("arn:aws:s3:::%s/*", bucketInfo.ID()),
 				},
 			}
-			s3.NewBucketAclV2(ctx, s3Info.Name+"Acls", &s3.BucketAclV2Args{
-				Bucket: bucketInfo.ID(),
-				Acl:    pulumi.String(s3.CannedAclPublicRead),
-			}, pulumi.DependsOn([]pulumi.Resource{
-				bucketInfo,
-			}))
 			s3.NewBucketPolicy(ctx, s3Info.Name+"Policy", &s3.BucketPolicyArgs{
 				Bucket: bucketInfo.ID(),
-				Policy: pulumi.JSONMarshal(piblicS3Policy),
+				Policy: pulumi.JSONMarshal(publicS3Policy),
 			}, pulumi.DependsOn([]pulumi.Resource{
 				bucketInfo,
+				bucketAcls,
 			}))
 		}
 	}
